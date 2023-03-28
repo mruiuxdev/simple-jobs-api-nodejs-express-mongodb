@@ -1,10 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const slugify = require("slugify");
-const slug = require("mongoose-slug-generator");
 const geoCoder = require("../utils/geocoder");
-
-mongoose.plugin(slug);
 
 const jobSchema = new mongoose.Schema({
 	title: {
@@ -13,7 +10,7 @@ const jobSchema = new mongoose.Schema({
 		trim: true,
 		maxLength: [100, "Job title can not exceed 100 characters"],
 	},
-	slug: { type: String, slug: "title" },
+	slug: String,
 	description: {
 		type: String,
 		required: [true, "Please enter description job"],

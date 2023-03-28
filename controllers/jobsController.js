@@ -2,7 +2,6 @@
 
 const Job = require("../models/jobsModel");
 const geoCoder = require("../utils/geocoder");
-const slugify = require("slugify");
 
 exports.getAllJobs = async (req, res, next) => {
 	const allJobs = await Job.find();
@@ -12,6 +11,23 @@ exports.getAllJobs = async (req, res, next) => {
 		results: allJobs.length,
 		data: allJobs,
 	});
+};
+
+exports.getJobByIdSlug = async (req, res, next) => {
+	let job = await Job.findById(req.params.id);
+
+	if (!job || job.length === 0) {
+		res.status(404).json({ success: false, message: "Job not found" });
+	} else {
+		job = await Job.find({
+			$and: [{ _id: req.params.id }, { slug: req.params.slug }],
+		});
+
+		res.status(200).json({
+			success: true,
+			data: job,
+		});
+	}
 };
 
 exports.createJob = async (req, res, next) => {
@@ -60,6 +76,47 @@ exports.updateJobById = async (req, res, next) => {
 			success: true,
 			message: "Job is updated",
 			data: job,
+		});
+	}
+};
+
+exports.deleteJobById = async (req, res, next) => {
+	let job = await Job.findById(req.params.id);
+
+	if (!job) {
+		res.status(404).json({ success: false, message: "Job not found" });
+	} else {
+		job = await Job.findByIdAndRemove(req.params.id);
+
+		res.status(200).json({
+			success: true,
+			message: "Job is deleted",
+		});
+	}
+};
+
+exports.jobsStats = async (req, res, next) => {
+	const stats = await Job.aggregate([
+		{
+			$match: { $text: { $search: `"${req.params.topic}"` } },
+		},
+		{
+			$group: {
+				_id: null,
+				totalJobs: { $sum: 1 },
+			},
+		},
+	]);
+
+	if (stats.length === 0) {
+		res.status(404).json({
+			success: false,
+			message: `No stats found for - ${req.params.topic}`,
+		});
+	} else {
+		res.status(200).json({
+			success: true,
+			data: stats,
 		});
 	}
 };
