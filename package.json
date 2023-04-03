@@ -11,9 +11,8 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "start": "set NODE_ENV=production & node app",
     "dev": "nodemon app",
-    "prod": "set NODE_ENV=production & nodemon app"
+    "prod": "set NODE_ENV=production&&nodemon app"
   },
   "author": "MRamadan",
   "license": "ISC",

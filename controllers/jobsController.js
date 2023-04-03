@@ -1,10 +1,11 @@
 "use strict";
 
 const Job = require("../models/jobsModel");
-const ErrorHandler = require("../utils/errorHandler");
 const geoCoder = require("../utils/geocoder");
+const ErrorHandler = require("../utils/errorHandler");
+const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 
-exports.getAllJobs = async (req, res, next) => {
+exports.getAllJobs = catchAsyncErrors(async (req, res, next) => {
   const allJobs = await Job.find();
 
   res.status(200).json({
@@ -12,9 +13,9 @@ exports.getAllJobs = async (req, res, next) => {
     results: allJobs.length,
     data: allJobs,
   });
-};
+});
 
-exports.createJob = async (req, res, next) => {
+exports.createJob = catchAsyncErrors(async (req, res, next) => {
   const job = await Job.create(req.body);
 
   res.status(200).json({
@@ -22,9 +23,9 @@ exports.createJob = async (req, res, next) => {
     message: "Job created",
     data: job,
   });
-};
+});
 
-exports.updateJobById = async (req, res, next) => {
+exports.updateJobById = catchAsyncErrors(async (req, res, next) => {
   let job = await Job.findById(req.params.id);
 
   if (!job) {
@@ -41,13 +42,13 @@ exports.updateJobById = async (req, res, next) => {
       data: job,
     });
   }
-};
+});
 
-exports.deleteJobById = async (req, res, next) => {
+exports.deleteJobById = catchAsyncErrors(async (req, res, next) => {
   let job = await Job.findById(req.params.id);
 
   if (!job) {
-    res.status(404).json({ success: false, message: "Job not found" });
+    return next(new ErrorHandler("Job not found", 404));
   } else {
     job = await Job.findByIdAndRemove(req.params.id);
 
@@ -56,13 +57,13 @@ exports.deleteJobById = async (req, res, next) => {
       message: "Job is deleted",
     });
   }
-};
+});
 
-exports.getJobByIdSlug = async (req, res, next) => {
+exports.getJobByIdSlug = catchAsyncErrors(async (req, res, next) => {
   let job = await Job.findById(req.params.id);
 
   if (!job || job.length === 0) {
-    res.status(404).json({ success: false, message: "Job not found" });
+    return next(new ErrorHandler("Job not found", 404));
   } else {
     job = await Job.find({
       $and: [{ _id: req.params.id }, { slug: req.params.slug }],
@@ -73,9 +74,9 @@ exports.getJobByIdSlug = async (req, res, next) => {
       data: job,
     });
   }
-};
+});
 
-exports.getJobsByRadius = async (req, res, next) => {
+exports.getJobsByRadius = catchAsyncErrors(async (req, res, next) => {
   const { zipcode, distance } = req.params;
 
   const loc = await geoCoder.geocode(zipcode);
@@ -94,9 +95,9 @@ exports.getJobsByRadius = async (req, res, next) => {
     result: jobs.length,
     data: jobs,
   });
-};
+});
 
-exports.getJobsStats = async (req, res, next) => {
+exports.getJobsStats = catchAsyncErrors(async (req, res, next) => {
   const topic = req.params.topic;
 
   const stats = await Job.aggregate([
@@ -116,10 +117,7 @@ exports.getJobsStats = async (req, res, next) => {
   ]);
 
   if (!stats || stats.length === 0) {
-    res.status(404).json({
-      success: false,
-      message: "Not found",
-    });
+    return next(new ErrorHandler("Jobs not found", 404));
   } else {
     res.status(200).json({
       success: true,
@@ -127,4 +125,4 @@ exports.getJobsStats = async (req, res, next) => {
       data: stats,
     });
   }
-};
+});
