@@ -19,13 +19,19 @@ const port = process.env.PORT;
 app.use(express.json());
 
 const apiVersion = process.env.API_VERSION_ONE;
+
 const jobsRoutes = require("./routes/jobs");
+const authRoutes = require("./routes/auth");
+
 const ErrorHandler = require("./utils/errorHandler");
 
 app.use(apiVersion, jobsRoutes);
+app.use(apiVersion, authRoutes);
+
 app.all("*", (req, res, next) =>
   next(new ErrorHandler(`${req.originalUrl} not found`, 404))
 );
+
 app.use(errorMiddleware);
 
 const server = app.listen(port, () =>
