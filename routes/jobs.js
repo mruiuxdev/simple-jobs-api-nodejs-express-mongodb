@@ -10,12 +10,18 @@ const {
   deleteJobById,
   getJobsStats,
 } = require("../controllers/jobsController");
+const { isAuthentication, authorizeRoles } = require("../middleware/auth");
 
 router.route("/jobs").get(getAllJobs);
 router.route("/jobs/:zipcode/:distance").get(getJobsByRadius);
 router.route("/jobs/:topic").get(getJobsStats);
 router.route("/job/:id/:slug").get(getJobByIdSlug);
-router.route("/job").post(createJob);
-router.route("/job/:id").put(updateJobById).delete(deleteJobById);
+router
+  .route("/job")
+  .post(isAuthentication, authorizeRoles("employer", "admin"), createJob);
+router
+  .route("/job/:id")
+  .put(isAuthentication, authorizeRoles("employer", "admin"), updateJobById)
+  .delete(isAuthentication, authorizeRoles("employer", "admin"), deleteJobById);
 
 module.exports = router;

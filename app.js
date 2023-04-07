@@ -2,6 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/database");
 const errorMiddleware = require("./middleware/error");
+const cookieParser = require("cookie-parser");
 
 dotenv.config({ path: "./config/.env" });
 
@@ -17,6 +18,7 @@ const app = express();
 const port = process.env.PORT;
 
 app.use(express.json());
+app.use(cookieParser());
 
 const apiVersion = process.env.API_VERSION_ONE;
 
