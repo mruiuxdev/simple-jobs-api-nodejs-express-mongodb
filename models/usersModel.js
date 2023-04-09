@@ -38,6 +38,10 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) {
+    next();
+  }
+
   this.password = await bcrypt.hash(this.password, 10);
 });
 
@@ -51,11 +55,11 @@ userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.generateResetPasswordToken = function () {
+userSchema.methods.getResetPasswordToken = function () {
   const resetToken = crypto.randomBytes(20).toString("hex");
 
   this.resetPasswordToken = crypto
-    .createHash("has265")
+    .createHash("sha256")
     .update(resetToken)
     .digest("hex");
 
