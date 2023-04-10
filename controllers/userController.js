@@ -83,6 +83,8 @@ exports.appliedJobs = catchAsyncErrors(async (req, res, next) => {
 exports.publishedJobs = catchAsyncErrors(async (req, res, next) => {
 	const jobs = await Job.find({ user: req.user.id });
 
+	console.log(req.user.id);
+
 	res.status(200).json({
 		success: true,
 		results: jobs.length,
@@ -106,19 +108,22 @@ exports.usersByAdmin = catchAsyncErrors(async (req, res, next) => {
 	});
 });
 
-// ! Not working well
-exports.deleteUserByAdmin = catchAsyncErrors(async (req, res, next) => {
+exports.deleteUserAdmin = catchAsyncErrors(async (req, res, next) => {
 	const user = await User.findById(req.params.id);
 
-	if (!user) return next(new ErrorHandler("User not found", 404));
+	if (!user) {
+		return next(
+			new ErrorHandler(`User not found with id: ${req.params.id}`, 404)
+		);
+	}
 
 	deleteUserData(user.id, user.role);
 
-	await user.remove();
+	await user.deleteOne();
 
 	res.status(200).json({
 		success: true,
-		message: "User is deleted by admin",
+		message: "User is deleted by Admin",
 	});
 });
 

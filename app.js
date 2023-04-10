@@ -1,9 +1,17 @@
 const express = require("express");
 const fileUpload = require("express-fileupload");
 const dotenv = require("dotenv");
+const cookieParser = require("cookie-parser");
+const rateLimit = require("express-rate-limit");
+const helmet = require("helmet");
+const mongoSanitize = require("express-mongo-sanitize");
+const xssClean = require("xss-clean");
+const hpp = require("hpp");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+
 const connectDB = require("./config/database");
 const errorMiddleware = require("./middleware/error");
-const cookieParser = require("cookie-parser");
 
 dotenv.config({ path: "./config/.env" });
 
@@ -18,7 +26,27 @@ connectDB();
 const app = express();
 const port = process.env.PORT;
 
-app.use(express.json()).use(cookieParser()).use(fileUpload());
+const limiter = rateLimit({
+	windowMs: 10 * 60 * 1000,
+	max: 100,
+});
+
+app
+	.use(bodyParser.urlencoded({ extended: true }))
+	.use(express.static("public"))
+	.use(helmet())
+	.use(express.json())
+	.use(cookieParser())
+	.use(fileUpload())
+	.use(limiter)
+	.use(mongoSanitize())
+	.use(xssClean())
+	.use(
+		hpp({
+			whitelist: ["positions"],
+		})
+	)
+	.use(cors());
 
 const apiVersion = process.env.API_VERSION_ONE;
 
