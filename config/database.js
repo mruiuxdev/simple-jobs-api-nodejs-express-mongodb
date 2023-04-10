@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 // mongodb://127.0.0.1:27017/jobs
-const connectDB = async () => await mongoose.connect(process.env.DB_LOCAL_URL);
+const connectDB = async () => await mongoose.connect(process.env.DB_ONLINE_URL);
 
 if (connectDB) {
 	console.log("Connected to MongoDB");
