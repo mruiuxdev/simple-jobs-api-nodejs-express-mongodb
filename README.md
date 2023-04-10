@@ -1,7 +1,7 @@
 
 ## Simple Jobs API using Node.js, Express, and MongoDB
 
-This is a simple project that implements a RESTful API for job postings. The API allows users to create, update, delete, and search for job postings.
+This is a simple project that implements a RESTful API for job postings. The API allows users ['user', 'employer', 'admin'] to create, update, delete, and search for job postings.
 
 
 ## Technologies used
