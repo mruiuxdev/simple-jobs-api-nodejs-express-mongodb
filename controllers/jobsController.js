@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const Job = require("../models/jobsModel");
 const geoCoder = require("../utils/geocoder");
 const APIFilters = require("../utils/apiFilters");
@@ -36,35 +37,59 @@ exports.createJob = catchAsyncErrors(async (req, res, next) => {
 exports.updateJobById = catchAsyncErrors(async (req, res, next) => {
 	let job = await Job.findById(req.params.id);
 
-	if (!job) {
-		return next(new ErrorHandler("Job not found", 404));
-	} else {
-		job = await Job.findByIdAndUpdate(req.params.id, req.body, {
-			new: true,
-			runValidators: true,
-		});
+	if (!job) return next(new ErrorHandler("Job not found", 404));
 
-		res.status(200).json({
-			success: true,
-			message: "Job is updated",
-			data: job,
-		});
-	}
+	if (job.user.toString() !== req.user.id && req.user.role !== "admin")
+		return next(
+			new ErrorHandler(
+				`User ${req.user.id} is not allowed to update this job`,
+				400
+			)
+		);
+
+	job = await Job.findByIdAndUpdate(req.params.id, req.body, {
+		new: true,
+		runValidators: true,
+	});
+
+	res.status(200).json({
+		success: true,
+		message: "Job is updated",
+		data: job,
+	});
 });
 
 exports.deleteJobById = catchAsyncErrors(async (req, res, next) => {
-	let job = await Job.findById(req.params.id);
+	let job = await Job.findById(req.params.id).select("+applicationsApplied");
 
-	if (!job) {
-		return next(new ErrorHandler("Job not found", 404));
-	} else {
-		job = await Job.findByIdAndRemove(req.params.id);
+	if (!job) return next(new ErrorHandler("Job not found", 404));
 
-		res.status(200).json({
-			success: true,
-			message: "Job is deleted",
+	if (job.user.toString() !== req.user.id && req.user.role !== "admin")
+		return next(
+			new ErrorHandler(
+				`User ${req.user.id} is not allowed to delete this job`,
+				400
+			)
+		);
+
+	for (let i = 0; i < job.applicationsApplied.length; i++) {
+		let filePath =
+			`${__dirname}/public/uploads/${job.applicationsApplied[i].resume}`.replace(
+				"\\controllers",
+				""
+			);
+
+		fs.unlink(filePath, (err) => {
+			if (err) return console.log(err);
 		});
 	}
+
+	job = await Job.findByIdAndRemove(req.params.id);
+
+	res.status(200).json({
+		success: true,
+		message: "Job is deleted",
+	});
 });
 
 exports.getJobByIdSlug = catchAsyncErrors(async (req, res, next) => {
@@ -75,6 +100,9 @@ exports.getJobByIdSlug = catchAsyncErrors(async (req, res, next) => {
 	} else {
 		job = await Job.find({
 			$and: [{ _id: req.params.id }, { slug: req.params.slug }],
+		}).populate({
+			path: "user",
+			select: "name",
 		});
 
 		res.status(200).json({
@@ -167,28 +195,28 @@ exports.applyJob = catchAsyncErrors(async (req, res, next) => {
 	}`;
 
 	file.mv(`${process.env.UPLOAD_PATH}/${file.name}`, async (err) => {
-		return next(new ErrorHandler("Resume file upload failed", 500));
-	});
+		if (err) return next(new ErrorHandler("Resume file upload failed", 500));
 
-	await Job.findByIdAndUpdate(
-		req.params.id,
-		{
-			$push: {
-				applicationsApplied: {
-					id: req.user.id,
-					resume: file.name,
+		await Job.findByIdAndUpdate(
+			req.params.id,
+			{
+				$push: {
+					applicationsApplied: {
+						id: req.user.id,
+						resume: file.name,
+					},
 				},
 			},
-		},
-		{
-			new: true,
-			runValidators: true,
-		}
-	);
+			{
+				new: true,
+				runValidators: true,
+			}
+		);
 
-	res.status(200).json({
-		success: true,
-		message: "Applied to job successfully",
-		data: file.name,
+		res.status(200).json({
+			success: true,
+			message: "Applied to job successfully",
+			data: file.name,
+		});
 	});
 });
