@@ -79,7 +79,6 @@ exports.appliedJobs = catchAsyncErrors(async (req, res, next) => {
 	});
 });
 
-// ! Not working well
 exports.publishedJobs = catchAsyncErrors(async (req, res, next) => {
 	const jobs = await Job.find({ user: req.user.id });
 
